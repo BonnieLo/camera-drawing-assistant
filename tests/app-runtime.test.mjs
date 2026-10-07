@@ -13,7 +13,7 @@ test('app boots, calibrates, edits, locks and re-registers without losing paper 
     setAttribute:(k,v)=>{attrs[k]=v;},getAttribute:k=>attrs[k],removeAttribute(k){delete attrs[k];},
     getContext:()=>context,getBoundingClientRect:()=>({left:0,top:0,width:600,height:450}),setPointerCapture(){}};}
   const nodes=Object.fromEntries(ids.map(id=>[id,element()]));nodes.paper.value='210,297';nodes.paper.options=[{value:'210,297'},{value:'297,210'},{value:'1,1'}];nodes['project-name'].value='Test drawing';nodes.grid.checked=true;nodes['reference-grid'].checked=true;
-  const classes=new Set();globalThis.document={hidden:false,createElement:element,getElementById:id=>nodes[id],addEventListener(){},documentElement:{},body:{classList:{toggle:k=>classes.has(k)?classes.delete(k):classes.add(k),contains:k=>classes.has(k),remove:k=>classes.delete(k)}}};
+  const classes=new Set();globalThis.document={hidden:false,createElement:element,getElementById:id=>nodes[id],addEventListener(){},documentElement:{},body:{classList:{toggle:k=>classes.has(k)?classes.delete(k):classes.add(k),contains:k=>classes.has(k),remove:k=>classes.delete(k),add:k=>classes.add(k)}}};
   globalThis.window={addEventListener(){},confirm:()=>true};globalThis.location={href:'https://example.test/'};globalThis.devicePixelRatio=2;
   globalThis.requestAnimationFrame=()=>{};globalThis.ResizeObserver=class {observe(){}};
   Object.defineProperty(globalThis,'navigator',{value:{mediaDevices:{}},configurable:true});
@@ -21,8 +21,10 @@ test('app boots, calibrates, edits, locks and re-registers without losing paper 
   assert.equal(nodes['reference-layer'].hidden,true);
   const q0=[[.5-.32*210/297-.04,.5-.39+.04],[.5+.32*210/297-.025,.5-.39-.02],[.5+.32*210/297+.055,.5+.39-.015],[.5-.32*210/297-.035,.5+.39+.035]];
   const q1=[[.5-.32*210/297+.065,.5-.39-.02],[.5+.32*210/297+.08,.5-.39+.13],[.5+.32*210/297-.035,.5+.39+.06],[.5-.32*210/297-.075,.5+.39-.09]];
-  function register(q){nodes.select.onclick();q.forEach(([x,y],i)=>nodes.canvas.fire('pointerdown',{pointerId:i+1,isPrimary:true,clientX:x*600,clientY:y*450}));assert.equal(nodes.confirm.disabled,false);nodes.confirm.onclick();}
-  register(q0);nodes['sample-image'].onclick();assert.equal(nodes['reference-layer'].hidden,false);
+  function register(q){nodes['stage-select'].onclick();q.forEach(([x,y],i)=>{nodes.canvas.fire('pointerdown',{pointerId:i+1,isPrimary:true,clientX:x*600,clientY:y*450});nodes.canvas.fire('pointerup',{pointerId:i+1});});assert.equal(nodes['stage-confirm'].disabled,false);nodes['stage-confirm'].onclick();}
+  nodes['nav-paper'].onclick();assert.equal(document.body.classList.contains('tools'),true);
+  nodes['stage-select'].onclick();assert.equal(document.body.classList.contains('tools'),false);assert.equal(nodes['stage-confirm'].hidden,false);
+  register(q0);assert.equal(nodes['calibration-actions'].hidden,true);assert.equal(nodes['stage-image'].hidden,false);nodes['sample-image'].onclick();assert.equal(nodes['reference-layer'].hidden,false);
   nodes.width.value='57';nodes.width.oninput();assert.equal(nodes['width-value'].value,'57%');
   nodes.rotation.value='32';nodes.rotation.oninput();assert.equal(nodes['rotation-value'].value,'32°');
   const before=nodes['reference-image'].style.transform;nodes.lock.onclick();assert.equal(nodes.width.disabled,true);

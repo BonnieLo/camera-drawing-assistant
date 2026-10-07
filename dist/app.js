@@ -14,13 +14,21 @@ let sessionUI=null,lastRegistration=null;
 const changed=()=>sessionUI?.changed();
 const letters=['A','B','C','D'];
 const paper=()=>{const [width,height]=$('paper').value.split(',').map(Number);return {width,height};};
-function message(t,error=false){$('status').textContent=t;$('status').classList.toggle('error',error);}
-function tab(name){for(const key of ['paper','reference','sessions']){$(`${key}-panel`).hidden=key!==name;$(`tab-${key}`).setAttribute('aria-pressed',String(key===name));}}
-function cancelGesture(){gestures.reset();drag=null;}
+function message(t,error=false){$('status').textContent=t;$('status').classList.toggle('error',error);$('camera-feedback').textContent=t||'';$('camera-feedback').hidden=!error;$('camera-feedback').classList.toggle('error',error);}
+function tab(name){$('tool-title').textContent={paper:'紙張與對位',reference:'調整參考圖片',sessions:'我的作品'}[name];for(const key of ['paper','reference','sessions']){$(`${key}-panel`).hidden=key!==name;$(`tab-${key}`).setAttribute('aria-pressed',String(key===name));}for(const key of ['paper','reference','sessions'])$(`nav-${key}`).setAttribute('aria-pressed',String(key===name));}
+function openTools(name){if(name)tab(name);document.body.classList.add('tools');$('focus-tools').setAttribute('aria-pressed','true');}
+function closeTools(){document.body.classList.remove('tools');$('focus-tools').setAttribute('aria-pressed','false');}
+function cancelGesture(){gestures.reset();drag=null;$('corner-loupe').hidden=true;}
 function invalidate(t){corners=[];H=null;confirmed=false;selecting=false;cancelGesture();if(t)message(t);sync();}
 function render(){renderReference($('reference-layer'),$('reference-image'),{h:H,corners,rect,transform,paper:paper(),asset,visible:confirmed&&!hidden});}
 function sync(){
   sessionUI?.sync();
+  $('calibration-actions').hidden=confirmed;
+  $('stage-camera').hidden=selecting; $('stage-camera').disabled=camera.starting; $('stage-camera').textContent=camera.starting?'等待權限…':source==='camera'?'重新開相機':'開啟相機';
+  $('stage-select').hidden=selecting;$('stage-select').disabled=camera.starting;
+  $('stage-undo').hidden=!selecting;$('stage-undo').disabled=!corners.length;
+  $('stage-confirm').hidden=!selecting;$('stage-confirm').disabled=!H||confirmed;
+  $('stage-image').hidden=!confirmed||Boolean(asset);
   $('undo').disabled=!corners.length||confirmed;$('confirm').disabled=!H||confirmed;$('select').disabled=camera.starting;
   $('select').textContent=selecting?'重新選角':confirmed?'重新校準':'開始選角';$('paper').disabled=selecting||confirmed;
   $('registration-label').textContent=confirmed?'✓ 紙張座標已建立':corners.length===4?'等待確認':selecting?`選角 ${corners.length} / 4`:'尚未校準';
@@ -99,8 +107,18 @@ function draw(){
   }else if(source==='demo')drawDemo();
   drawGrid();
   if(corners.length>1&&!H){ctx.strokeStyle='#d6956c';ctx.lineWidth=1.5;ctx.beginPath();corners.forEach((p,i)=>i?ctx.lineTo(...toDisplay(p,rect)):ctx.moveTo(...toDisplay(p,rect)));ctx.stroke();}
+  drawLoupe();
   corners.forEach((p,i)=>{const [x,y]=toDisplay(p,rect);ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle=confirmed?'#42664a':'#af6748';ctx.fill();ctx.strokeStyle='#fff8df';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff8df';ctx.font='600 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(letters[i],x,y);});
   requestAnimationFrame(draw);
+}
+function drawLoupe(){
+  const loupe=$('corner-loupe');if(!drag||!selecting||confirmed){loupe.hidden=true;return;}
+  const [x,y]=toDisplay(corners[drag.index],rect),radius=80,zoom=3,dpr=canvas.width/vw;
+  loupe.hidden=false;loupe.style.right=x>vw/2?'auto':'14px';loupe.style.left=x>vw/2?'14px':'auto';
+  const lctx=loupe.getContext('2d');lctx.fillStyle='#101712';lctx.fillRect(0,0,160,160);
+  lctx.drawImage(canvas,(x-radius/zoom)*dpr,(y-radius/zoom)*dpr,160/zoom*dpr,160/zoom*dpr,0,0,160,160);
+  lctx.strokeStyle='#ffffff';lctx.lineWidth=1.5;lctx.beginPath();lctx.moveTo(64,80);lctx.lineTo(96,80);lctx.moveTo(80,64);lctx.lineTo(80,96);lctx.stroke();
+  lctx.strokeStyle='#cf935f';lctx.beginPath();lctx.arc(80,80,4,0,Math.PI*2);lctx.stroke();
 }
 function point(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
 canvas.addEventListener('pointerdown',e=>{
@@ -110,7 +128,7 @@ canvas.addEventListener('pointerdown',e=>{
     if(!e.isPrimary)return;
     if(n.some(v=>v<0||v>1)){message('請在影像內選角，不要點黑色留白。',true);return;}
     const hit=corners.findIndex(c=>Math.hypot(...toDisplay(c,rect).map((v,i)=>v-p[i]))<28);
-    if(hit>=0){drag={id:e.pointerId,index:hit};canvas.setPointerCapture(e.pointerId);}else if(corners.length<4){corners.push(n);updateH();}
+    if(hit>=0){drag={id:e.pointerId,index:hit};canvas.setPointerCapture(e.pointerId);}else if(corners.length<4){corners.push(n);drag={id:e.pointerId,index:corners.length-1};canvas.setPointerCapture(e.pointerId);updateH();}
   }else if(confirmed&&asset&&!transform.locked&&!hidden){
     const metric=displayToPaperMetric(p,H,rect,paper()),config=paper();
     if(metric[0]<0||metric[0]>config.width||metric[1]<0||metric[1]>config.height)return;
@@ -121,26 +139,27 @@ canvas.addEventListener('pointermove',e=>{
   if(drag?.id===e.pointerId){corners[drag.index]=fromDisplay(point(e),rect).map(v=>Math.max(0,Math.min(1,v)));updateH();}
   else if(confirmed&&asset&&!hidden&&gestures.points.has(e.pointerId)){gestures.move(e.pointerId,displayToPaperMetric(point(e),H,rect,paper()));e.preventDefault();}
 });
-function endPointer(e){if(drag?.id===e.pointerId)drag=null;gestures.end(e.pointerId);}
+function endPointer(e){if(drag?.id===e.pointerId){drag=null;$('corner-loupe').hidden=true;}gestures.end(e.pointerId);}
 for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,endPointer);
-function startSelection(){invalidate();selecting=true;tab('paper');message('固定手機，依 A 左上 → B 右上 → C 右下 → D 左下點選。原有參考構圖會保留。');sync();}
+function startSelection(){if(sessionUI?.busy)return;closeTools();invalidate();selecting=true;tab('paper');message('固定手機，依 A 左上 → B 右上 → C 右下 → D 左下點選。原有參考構圖會保留。');sync();}
 $('select').onclick=startSelection;$('quick-align').onclick=startSelection;
 $('undo').onclick=()=>{corners.pop();updateH();};
 $('confirm').onclick=()=>{
   if(!H)return;confirmed=true;selecting=false;cancelGesture();
   lastRegistration={corners:structuredClone(corners),homography:[...H],cameraFrame:{width:sw,height:sh},source,capturedAt:new Date().toISOString(),diagnosticOnly:true};if(asset)changed();
   if(asset&&!canProjectReference(H,transform,paper(),asset)){message('校準已完成，但原構圖超出新角度的投影範圍。請解鎖後按「置中適合紙面」。',true);}else message(asset?'校準完成。圖片已回到原有紙上構圖，可以調整或鎖定。':'校準完成。接著選擇一張參考圖片。');
-  tab('reference');sync();
+  tab('reference');closeTools();sync();
 };
 $('paper').onchange=()=>{lastRegistration=null;invalidate('紙張設定已更新，請重新選角。');if(asset)changed();};
 $('demo-angle').onclick=()=>{angle=1-angle;invalidate('模擬角度已改變。重新選四角後，參考圖會回到原有構圖。');tab('paper');};
 function useDemo(t){camera.stop();source='demo';sw=1000;sh=750;rect=contain(sw,sh,vw,vh);invalidate(t);tab('paper');}
 const camera=createCamera(video,{
+  getViewport:()=>stage.getBoundingClientRect(),
   onStatus:(t,error=false)=>{message(t,error);sync();},
   onReady:({width,height,facing})=>{source='camera';sw=width;sh=height;rect=contain(sw,sh,vw,vh);invalidate(facing==='user'?'目前使用前鏡頭。請改用有後鏡頭的裝置。':'相機已開啟。固定裝置，完整露出紙張四角，再開始校準。');tab('paper');},
   onStopped:t=>useDemo(t)
 });
-$('camera').onclick=()=>{if(sessionUI?.busy)return;invalidate();tab('paper');camera.start();};
+$('camera').onclick=()=>{if(sessionUI?.busy)return;closeTools();invalidate();tab('paper');camera.start();};
 $('demo').onclick=()=>useDemo('已返回模擬畫紙；參考圖與構圖保留，請重新校準。');
 function suspend(){void sessionUI?.flush();cancelGesture();if(source==='camera'||camera.active)useDemo('相機因離開畫面而停止。參考構圖保留在本次頁面，請重新開啟相機並校準。');}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});window.addEventListener('pagehide',suspend);
@@ -154,7 +173,12 @@ $('focus').onclick=async()=>{
   void wake.update();
   try{if(focused&&document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else if(!focused&&document.fullscreenElement)await document.exitFullscreen();}catch{/* Standalone / viewport focus works without Fullscreen API. */}
 };
-$('focus-tools').onclick=()=>{document.body.classList.toggle('tools');$('focus-tools').setAttribute('aria-pressed',String(document.body.classList.contains('tools')));};
+$('focus-tools').onclick=()=>document.body.classList.contains('tools')?closeTools():openTools();
+$('close-tools').onclick=closeTools;
+for(const name of ['paper','reference','sessions'])$(`nav-${name}`).onclick=()=>{openTools(name);if(name==='sessions')void sessionUI.refresh();};
+$('stage-camera').onclick=()=>$('camera').onclick();$('stage-select').onclick=startSelection;
+$('stage-undo').onclick=()=>$('undo').onclick();$('stage-confirm').onclick=()=>$('confirm').onclick();
+$('stage-image').onclick=()=>{openTools('reference');$('import-image').onclick();};
 
 $('tab-paper').onclick=()=>tab('paper');$('tab-reference').onclick=()=>tab('reference');$('tab-sessions').onclick=()=>{tab('sessions');void sessionUI.refresh();};
 for(const id of ['grid','reference-grid'])$(id).onchange=()=>{$(id==='grid'?'reference-grid':'grid').checked=$(id).checked;};
@@ -163,7 +187,7 @@ function acceptAsset(next){
   if(sessionUI?.busy){next.release();return;}
   asset?.release();asset=next;transform=fitReference(paper(),asset);hidden=false;cancelGesture();
   $('reference-image').src=asset.url;$('thumbnail').src=asset.url;
-  message(confirmed?'參考圖已載入。單指移動、雙指縮放與旋轉；也可使用下方微調工具。':'參考圖已載入。接著開啟相機並校準紙張四角。');tab('reference');changed();sync();
+  message(confirmed?'參考圖已載入。單指移動、雙指縮放與旋轉；也可使用下方微調工具。':'參考圖已載入。接著開啟相機並校準紙張四角。');tab('reference');closeTools();changed();sync();
 }
 $('import-image').onclick=()=>{if(sessionUI?.busy)return;cancelGesture();$('image-file').click();};
 $('image-file').onchange=async()=>{
@@ -194,6 +218,6 @@ sessionUI=createSessionUI({
   },
   resetDrawing:()=>{camera.stop();source='demo';sw=1000;sh=750;asset?.release();asset=null;transform=null;hidden=false;lastRegistration=null;++importId;importing=false;$('image-file').value='';rect=contain(sw,sh,vw,vh);$('reference-image').removeAttribute('src');$('thumbnail').removeAttribute('src');invalidate();tab('reference');}
 });
-$('quick-save').onclick=()=>{if(!sessionUI.current){tab('sessions');document.body.classList.add('tools');$('focus-tools').setAttribute('aria-pressed','true');message('請先命名並保存作品。');}else void sessionUI.save();};
+$('quick-save').onclick=()=>{if(!sessionUI.current){openTools('sessions');message('請先命名並保存作品。');}else void sessionUI.save().then(ok=>{if(ok){$('camera-feedback').textContent='作品已保存';$('camera-feedback').classList.remove('error');$('camera-feedback').hidden=false;}});};
 void setupPWA({hasUnsaved:()=>sessionUI.dirty,notify:message});
 size();sync();draw();

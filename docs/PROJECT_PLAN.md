@@ -92,7 +92,7 @@ Private Sites audience stays owner-only. Offline shell access uses previously ca
 
 Select/resume → paper configuration → camera → A–D → confirm → move/pinch/rotate → lock → focus → save.
 
-Three tool tabs: paper, reference, drawings. Four viewport quick actions: lock, show/hide, re-align, save. Session list shows project names and modified dates. Inline save status distinguishes unsaved, saving, committed and failed. Keep matrix/debug details out of the drawing flow.
+Camera-first workspace: compact header, large flexible preview, selection/undo/confirm controls beside the preview, and three navigation buttons. Paper, reference and drawings open a bottom sheet on phones or a sidebar on larger screens. Starting corner selection closes the sheet. Dragging a corner shows a 3× loupe away from the finger. Error feedback and save status remain visible on the preview. Camera constraints prefer a portrait stream in a portrait viewport, without cropping the rendered camera frame. Three tool tabs: paper, reference, drawings. Four viewport quick actions: lock, show/hide, re-align, save. Session list shows project names and modified dates. Inline save status distinguishes unsaved, saving, committed and failed. Keep matrix/debug details out of the drawing flow.
 
 ## Repository
 
@@ -121,7 +121,7 @@ Site-specific hosting config and credentials are excluded from public GitHub. Th
 
 ## Verification and next step
 
-37 Node tests and static/syntax checks across 10 JS files pass. See TEST_STATUS.md for the distinction between controlled adapters and real browser behavior. No actual Safari/IndexedDB/camera/touch/OS eviction was tested here; no browser screenshots were available.
+38 Node tests and static/syntax checks across 10 JS files pass. See TEST_STATUS.md for the distinction between controlled adapters and real browser behavior. No actual Safari/IndexedDB/camera/touch/OS eviction was tested here; no browser screenshots were available.
 
 Run M1/M2/M3/M4 checklists separately on iPhone and iPad, Safari and Home Screen, including a next-day Session restoration under a different camera angle. Fix observed errors, then mark MVP accepted. Do not add Phase 2–4 before this workflow is useful for real drawing.
 

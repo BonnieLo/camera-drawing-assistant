@@ -1,5 +1,5 @@
 // Version all app files together. No photos, sessions, API or sign-in responses are cached.
-const VERSION='paper-shell-mvp-20261007-1';
+const VERSION='paper-shell-camera-ui-20261008-1';
 const PREFIX='paper-shell-';
 const SHELL=['index.html','style.css','app.js','manifest.webmanifest','assets/vase.svg','assets/icon-192.png','assets/icon-512.png','assets/apple-touch-icon.png','lib/homography.js','lib/reference.js','lib/gestures.js','lib/renderer.js','lib/camera.js','lib/sessions.js','lib/session-ui.js','lib/pwa.js'];
 const base=new URL('./',self.location.href),urls=SHELL.map(p=>new URL(p,base).href);

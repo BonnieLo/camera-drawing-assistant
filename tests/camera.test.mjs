@@ -19,3 +19,8 @@ test('permission resolving after suspension does not restart the camera',async()
 test('permission denial releases busy state and reports a recoverable error',async()=>{
   const s=setup(async()=>{const e=new Error('Denied');e.name='NotAllowedError';throw e;});await s.camera.start();assert.equal(s.camera.starting,false);assert.ok(s.events.some(e=>e[0]==='status'&&e[1]===true));
 });
+test('portrait drawing viewport requests a portrait camera preference',async()=>{
+ let constraints;const s=setup(async c=>{constraints=c;return s.stream;});
+ const camera=createCamera(s.video,{onReady(){},onStatus(){},onStopped(){},getViewport:()=>({width:390,height:650})});
+ await camera.start();assert.equal(constraints.video.width.ideal,1080);assert.equal(constraints.video.height.ideal,1920);assert.equal(constraints.video.aspectRatio.ideal,9/16);camera.stop();
+});

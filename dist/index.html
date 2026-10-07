@@ -13,23 +13,24 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7 26 4 28 25 9 28Z"/><path d="m12 12 9-1 1 9-9 1Z"/></svg>paper<span>Drawing Assistant</span></a><span class="version">MVP · 描圖工作室</span><button id="focus-tools" class="quiet focus-only" aria-pressed="false">工具</button><button id="focus" class="quiet">專注畫面 ↗</button></header>
+  <header class="topbar"><a class="brand" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7 26 4 28 25 9 28Z"/><path d="m12 12 9-1 1 9-9 1Z"/></svg>paper</a><span class="version">描輪廓，自由創作</span><button id="focus-tools" class="quiet" aria-pressed="false">工具</button><button id="focus" class="quiet">專注畫面</button></header>
   <main>
-    <section class="intro"><div><p class="eyebrow">A LITTLE STRUCTURE. A LOT OF YOU.</p><h1>先對準紙張，<br class="mobile">再自由創作。</h1><p class="tagline">Trace the structure. Create the rest.</p></div><p class="intro-note">留下輪廓與比例，<br>把顏色和筆觸留給自己。</p></section>
     <div class="workspace">
       <section class="viewpanel" aria-label="相機與紙張校準">
-        <div class="viewbar"><span id="source-label"><i></i> DEMO STUDIO</span><span id="registration-label">尚未校準</span></div>
-        <div id="stage"><video id="video" autoplay muted playsinline aria-hidden="true"></video><canvas id="canvas" aria-label="紙張預覽；校準時選四角，編輯時單指移動、雙指縮放旋轉"></canvas><div id="reference-layer" class="reference-layer" hidden><img id="reference-image" alt="" draggable="false"></div><div class="scene-note" id="scene-note">模擬畫紙 · 可先試操作</div><div id="corner-prompt">固定手機後，點選「開始選角」</div></div>
+        <div class="viewbar"><span id="source-label"><i></i> DEMO STUDIO</span><span id="registration-label">尚未校準</span><span id="save-badge" aria-live="polite"></span></div>
+        <div id="stage"><video id="video" autoplay muted playsinline aria-hidden="true"></video><canvas id="canvas" aria-label="紙張預覽；校準時選四角，編輯時單指移動、雙指縮放旋轉"></canvas><div id="reference-layer" class="reference-layer" hidden><img id="reference-image" alt="" draggable="false"></div><div class="scene-note" id="scene-note">模擬畫紙 · 可先試操作</div><div id="corner-prompt">開啟相機，讓整張紙進入畫面</div><div id="camera-feedback" class="camera-feedback" role="status" aria-live="polite" hidden></div><canvas id="corner-loupe" width="160" height="160" aria-label="紙角三倍放大預覽" hidden></canvas></div>
+        <div id="calibration-actions" class="calibration-actions"><button id="stage-camera" class="primary">開啟相機</button><button id="stage-select">選紙張四角</button><button id="stage-undo" hidden>撤回</button><button id="stage-confirm" class="primary" hidden disabled>確認四角</button></div>
+        <button id="stage-image" class="primary stage-image" hidden>選擇參考圖片</button>
         <div class="quicktools" id="quicktools" hidden><button id="quick-lock">鎖定參考圖</button><button id="quick-hide" aria-pressed="false">暫時隱藏</button><button id="quick-align">重新對位</button><button id="quick-save">保存</button></div>
-        <div class="viewfooter"><span id="coordinates">PAPER SPACE / A → B → C → D</span><button id="demo-angle" class="darkquiet">切換模擬角度 ↻</button></div>
+        <nav class="viewfooter" aria-label="工作工具"><button id="nav-paper">紙張與對位</button><button id="nav-reference">參考圖片</button><button id="nav-sessions">我的作品</button></nav>
       </section>
-      <aside>
+      <aside id="tool-panel" aria-label="工作工具"><div class="sheet-heading"><b id="tool-title">紙張與對位</b><button id="close-tools" class="quiet" aria-label="收起工具">完成 ↓</button></div>
         <div class="paneltabs" aria-label="工作步驟"><button id="tab-paper" aria-pressed="true" aria-controls="paper-panel">01 紙張校準</button><button id="tab-reference" aria-pressed="false" aria-controls="reference-panel">02 參考圖片</button><button id="tab-sessions" aria-pressed="false" aria-controls="sessions-panel">03 我的作品</button></div>
         <section id="paper-panel" aria-label="紙張校準工具">
-        <div class="stephead"><span>01</span><div><p class="eyebrow">PAPER REGISTRATION</p><h2>讓紙張成為座標</h2></div></div>
+        <div class="stephead"><span>01</span><div><p class="eyebrow">PAPER REGISTRATION</p><h2>紙張與對位</h2></div></div>
         <p class="bodycopy">將整張紙放入畫面，並固定裝置。依序點選紙張四角，讓網格貼合紙面。</p>
         <button id="camera" class="primary">開啟後鏡頭 <span>↗</span></button>
-        <button id="demo" class="secondary" hidden>返回模擬畫紙</button>
+        <button id="demo" class="secondary" hidden>返回模擬畫紙</button><button id="demo-angle" class="secondary">切換模擬角度</button>
         <label class="field">紙張設定<select id="paper"><option value="210,297">A4 · 直式 210 × 297 mm</option><option value="297,210">A4 · 橫式 297 × 210 mm</option><option value="1,1">正方形 · 1 : 1</option></select></label>
         <div class="cornerguide"><span><b>A</b> 左上</span><span><b>B</b> 右上</span><span><b>C</b> 右下</span><span><b>D</b> 左下</span></div>
         <p class="tip">A 是紙張閱讀方向的左上角。往後恢復時，要指定同一個實體角落。</p>
@@ -39,7 +40,7 @@
         <details><summary>如何確認校準正確？</summary><p>網格外框應貼合四條紙邊；對角線應連接角落。可拖動 A–D 微調，再按確認。</p><p>校準後請固定手機。手動校準不會追蹤手機移動；移動、休眠或旋轉螢幕後，必須重新選角。</p></details>
         </section>
         <section id="reference-panel" aria-label="參考圖片工具" hidden>
-          <div class="stephead"><span>02</span><div><p class="eyebrow">REFERENCE, NOT REPLICATION</p><h2>給構圖一點方向</h2></div></div>
+          <div class="stephead"><span>02</span><div><p class="eyebrow">REFERENCE, NOT REPLICATION</p><h2>調整參考圖片</h2></div></div>
           <p class="bodycopy">選一張參考圖，在紙上調整位置。單指移動、雙指縮放與旋轉，完成後鎖定。</p>
           <input id="image-file" type="file" accept="image/*" hidden>
           <button id="import-image" class="primary">從照片選擇圖片 <span>＋</span></button>
@@ -59,7 +60,7 @@
           <p class="unsaved">完成構圖後，到「我的作品」命名並保存。首次保存後，變更會自動保存。</p>
         </section>
         <section id="sessions-panel" aria-label="保存與恢復作品" hidden>
-          <div class="stephead"><span>03</span><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>把構圖留到明天</h2></div></div>
+          <div class="stephead"><span>03</span><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>保存與繼續作品</h2></div></div>
           <label class="field">專案名稱<input id="project-name" type="text" maxlength="80" value="未命名作品" autocomplete="off"></label>
           <button id="save-session" class="primary" disabled>保存 Session</button>
           <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
@@ -76,7 +77,6 @@
         <p id="status" role="status" aria-live="polite">先用模擬畫紙練習，或開啟後鏡頭。</p>
       </aside>
     </div>
-    <section class="roadmap"><div><p class="eyebrow">BUILD IT, ONE VERIFIED STEP AT A TIME.</p><h2>一個可以慢慢長大的工具。</h2></div><ol><li><span>01 / BUILT</span><b>相機與紙張校準</b><small>後鏡頭 · 四角 · 透視網格</small></li><li class="current"><span>02 / BUILT</span><b>參考圖與紙上編輯</b><small>移動 · 縮放 · 旋轉 · 鎖定</small></li><li><span>03 / BUILT</span><b>保存與重新對位</b><small>紙張座標 · Session · Resume</small></li><li><span>04 / DEVICE CHECK</span><b>PWA 與實機驗收</b><small>主畫面 · 離線 · iPhone / iPad</small></li></ol></section>
-  </main><footer>paper <span>給輪廓一點方向，給創作更多空間。</span><a href="project-plan.md">專案規格 ↗</a></footer>
+  </main>
   <script type="module" src="app.js"></script>
 </body></html>

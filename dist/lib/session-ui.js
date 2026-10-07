@@ -7,6 +7,7 @@ export function createSessionUI({getState,applySession,resetDrawing,notify,store
   function status(t){$('save-status').textContent=t;}
   function sync(){
     const exists=Boolean(getState().asset),busy=Boolean(saving)||switching;
+    const badge=$('save-badge');if(badge)badge.textContent=!exists?'':saving?'保存中':dirty?'未保存':current?'已保存':'未保存';
     $('save-session').disabled=!exists||busy;
     $('save-copy').disabled=!exists||busy;
     $('export-session').disabled=!exists||busy;

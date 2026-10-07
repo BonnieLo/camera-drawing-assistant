@@ -20,6 +20,10 @@ Open in top-level iPhone/iPad Safari over HTTPS. The current deployment requires
 5. Open **My drawings / 我的作品**, name and save the Session. Wait for **Saved / 已保存**.
 6. On return, select the Session and resume. Open the camera and register the **same physical A–D corners**. Old camera homography is never used for live alignment.
 
+## Camera-first interface
+
+The preview fills the workspace. Paper, Reference and Drawings open a bottom tool sheet on phones; close it before selecting corners. On-screen selection/undo/confirmation avoids scrolling. Hold and drag a corner to inspect its 3× loupe on the opposite side of the preview. Focus hides secondary navigation while keeping Tools and drawing actions available.
+
 ## Features
 
 - Rear-camera preference, inline preview, camera suspension and manual re-registration
@@ -52,7 +56,7 @@ Browser eviction or clearing site data can remove local Sessions and caches. Sav
 
 ## Validation
 
-37 Node tests pass: numeric perspective/gestures, camera lifecycle, DOM-stub import/re-registration/focus flow, backup round trips, atomic commit/abort simulation, Session UI races, offline shell, sign-in exclusion, update policy and wake-lock races. Syntax/static checks cover 10 JavaScript files. IDB and service-worker tests use controlled adapters, not a real browser.
+38 Node tests pass: numeric perspective/gestures, camera lifecycle, DOM-stub import/re-registration/focus flow, backup round trips, atomic commit/abort simulation, Session UI races, offline shell, sign-in exclusion, update policy and wake-lock races. Syntax/static checks cover 10 JavaScript files. IDB and service-worker tests use controlled adapters, not a real browser.
 
 Real Safari camera, IndexedDB durability, EXIF/HEIC, CSS perspective, touch, Home Screen installation, private-site authentication/offline startup and device sleep/recovery remain **NOT TESTED**. Follow the device checklists; do not mark a milestone accepted solely from Node tests.
 

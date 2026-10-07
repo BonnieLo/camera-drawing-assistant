@@ -1,4 +1,4 @@
-export function createCamera(video,{onReady,onStatus,onStopped}){
+export function createCamera(video,{onReady,onStatus,onStopped,getViewport=()=>({width:1920,height:1080})}){
   let stream=null,request=0,starting=false;
   function stop(){++request;starting=false;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;}
   async function start(){
@@ -6,7 +6,8 @@ export function createCamera(video,{onReady,onStatus,onStopped}){
     if(!navigator.mediaDevices?.getUserMedia){onStatus('此環境無法使用相機。請在 iPhone / iPad Safari 直接開啟 HTTPS 網址。',true);return;}
     stop();const id=++request;starting=true;onStatus('等待相機權限…');
     try{
-      const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
+      const viewport=getViewport(),portrait=viewport.height>viewport.width;
+      const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:portrait?1080:1920},height:{ideal:portrait?1920:1080},aspectRatio:{ideal:portrait?9/16:16/9}}});
       if(id!==request||document.hidden){acquired.getTracks().forEach(t=>t.stop());return;}
       stream=acquired;video.srcObject=stream;await video.play();
       if(id!==request||document.hidden){acquired.getTracks().forEach(t=>t.stop());return;}
