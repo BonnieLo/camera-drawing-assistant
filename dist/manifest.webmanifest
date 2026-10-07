@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Paper Drawing Assistant",
+  "short_name": "Paper",
+  "description": "Trace the structure. Create the rest.",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f0e9",
+  "theme_color": "#f3f0e9",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

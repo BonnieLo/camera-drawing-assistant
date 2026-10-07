@@ -3,22 +3,28 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f0e9"><title>Paper · Drawing Assistant</title>
-  <meta name="description" content="Trace the structure. Create the rest. 紙張座標繪畫輔助工具，M2 參考圖與透視編輯。">
+  <meta name="description" content="Trace the structure. Create the rest. 紙張座標繪畫輔助工具，保存構圖、重新對位與主畫面描圖。">
+  <meta name="paper-shell" content="paper-mvp-v1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Paper">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7 26 4 28 25 9 28Z"/><path d="m12 12 9-1 1 9-9 1Z"/></svg>paper<span>Drawing Assistant</span></a><span class="version">M2 · 描圖工作室</span><button id="focus" class="quiet">專注畫面 ↗</button></header>
+  <header class="topbar"><a class="brand" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7 26 4 28 25 9 28Z"/><path d="m12 12 9-1 1 9-9 1Z"/></svg>paper<span>Drawing Assistant</span></a><span class="version">MVP · 描圖工作室</span><button id="focus-tools" class="quiet focus-only" aria-pressed="false">工具</button><button id="focus" class="quiet">專注畫面 ↗</button></header>
   <main>
     <section class="intro"><div><p class="eyebrow">A LITTLE STRUCTURE. A LOT OF YOU.</p><h1>先對準紙張，<br class="mobile">再自由創作。</h1><p class="tagline">Trace the structure. Create the rest.</p></div><p class="intro-note">留下輪廓與比例，<br>把顏色和筆觸留給自己。</p></section>
     <div class="workspace">
       <section class="viewpanel" aria-label="相機與紙張校準">
         <div class="viewbar"><span id="source-label"><i></i> DEMO STUDIO</span><span id="registration-label">尚未校準</span></div>
         <div id="stage"><video id="video" autoplay muted playsinline aria-hidden="true"></video><canvas id="canvas" aria-label="紙張預覽；校準時選四角，編輯時單指移動、雙指縮放旋轉"></canvas><div id="reference-layer" class="reference-layer" hidden><img id="reference-image" alt="" draggable="false"></div><div class="scene-note" id="scene-note">模擬畫紙 · 可先試操作</div><div id="corner-prompt">固定手機後，點選「開始選角」</div></div>
-        <div class="quicktools" id="quicktools" hidden><button id="quick-lock">鎖定參考圖</button><button id="quick-hide" aria-pressed="false">暫時隱藏</button><button id="quick-align">重新對位</button></div>
+        <div class="quicktools" id="quicktools" hidden><button id="quick-lock">鎖定參考圖</button><button id="quick-hide" aria-pressed="false">暫時隱藏</button><button id="quick-align">重新對位</button><button id="quick-save">保存</button></div>
         <div class="viewfooter"><span id="coordinates">PAPER SPACE / A → B → C → D</span><button id="demo-angle" class="darkquiet">切換模擬角度 ↻</button></div>
       </section>
       <aside>
-        <div class="paneltabs" aria-label="工作步驟"><button id="tab-paper" aria-pressed="true" aria-controls="paper-panel">01 紙張校準</button><button id="tab-reference" aria-pressed="false" aria-controls="reference-panel">02 參考圖片</button></div>
+        <div class="paneltabs" aria-label="工作步驟"><button id="tab-paper" aria-pressed="true" aria-controls="paper-panel">01 紙張校準</button><button id="tab-reference" aria-pressed="false" aria-controls="reference-panel">02 參考圖片</button><button id="tab-sessions" aria-pressed="false" aria-controls="sessions-panel">03 我的作品</button></div>
         <section id="paper-panel" aria-label="紙張校準工具">
         <div class="stephead"><span>01</span><div><p class="eyebrow">PAPER REGISTRATION</p><h2>讓紙張成為座標</h2></div></div>
         <p class="bodycopy">將整張紙放入畫面，並固定裝置。依序點選紙張四角，讓網格貼合紙面。</p>
@@ -50,12 +56,27 @@
             <div class="actionpair"><button id="fit-image">置中適合紙面</button><button id="hide-image" aria-pressed="false">暫時隱藏</button></div>
           </fieldset>
           <p class="tip">鎖定固定的是圖片在紙上的構圖；手機仍需固定。切換相機角度後重新對位，構圖會保留。</p>
-          <p class="unsaved">尚未支援保存。重新整理或關閉頁面會清除圖片與編輯。</p>
+          <p class="unsaved">完成構圖後，到「我的作品」命名並保存。首次保存後，變更會自動保存。</p>
         </section>
+        <section id="sessions-panel" aria-label="保存與恢復作品" hidden>
+          <div class="stephead"><span>03</span><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>把構圖留到明天</h2></div></div>
+          <label class="field">專案名稱<input id="project-name" type="text" maxlength="80" value="未命名作品" autocomplete="off"></label>
+          <button id="save-session" class="primary" disabled>保存 Session</button>
+          <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
+          <div class="actionpair"><button id="save-copy" disabled>另存新作品</button><button id="new-session">開始新作品</button></div>
+          <label class="field">已保存作品<select id="session-list"><option value="">正在讀取…</option></select></label>
+          <div class="actionpair"><button id="resume-session" disabled>恢復並重新對位</button><button id="delete-session" disabled>刪除作品</button></div>
+          <div class="actionpair"><button id="export-session" disabled>匯出備份</button><button id="import-session">匯入備份</button></div>
+          <input id="session-file" type="file" accept=".json,application/json" hidden>
+          <p class="tip">作品保存在這個瀏覽器／主畫面 App，不會自動同步到其他裝置。重要作品請匯出 .paper.json 備份。</p>
+          <p class="tip">恢復後，重新指定同一張紙的 A 左上、B 右上、C 右下、D 左下。舊相機角度不會直接套用。</p>
+        </section>
+        <details class="install-guide"><summary>加入主畫面與離線使用</summary><p>在 iPhone／iPad Safari 按「分享」→「加入主畫面」，再從 Paper 圖示開啟。第一次請保持連線，等待離線準備完成。</p><p>主畫面模式可能使用獨立儲存。若作品沒出現，先在原瀏覽器匯出備份，再於主畫面 App 匯入。離線不會跨裝置同步。</p><p id="pwa-status" role="status">正在準備離線 App…</p><button id="pwa-update" class="secondary" hidden>保存後更新 App</button></details>
+        <p id="wake-status" class="tip" role="status"></p>
         <p id="status" role="status" aria-live="polite">先用模擬畫紙練習，或開啟後鏡頭。</p>
       </aside>
     </div>
-    <section class="roadmap"><div><p class="eyebrow">BUILD IT, ONE VERIFIED STEP AT A TIME.</p><h2>一個可以慢慢長大的工具。</h2></div><ol><li><span>01 / BUILT</span><b>相機與紙張校準</b><small>後鏡頭 · 四角 · 透視網格</small></li><li class="current"><span>02 / NOW</span><b>參考圖與紙上編輯</b><small>移動 · 縮放 · 旋轉 · 鎖定</small></li><li><span>03 / NEXT</span><b>保存與重新對位</b><small>紙張座標 · Session · Resume</small></li><li><span>04 / MVP</span><b>PWA 與實機驗收</b><small>主畫面 · 離線 · iPhone / iPad</small></li></ol></section>
+    <section class="roadmap"><div><p class="eyebrow">BUILD IT, ONE VERIFIED STEP AT A TIME.</p><h2>一個可以慢慢長大的工具。</h2></div><ol><li><span>01 / BUILT</span><b>相機與紙張校準</b><small>後鏡頭 · 四角 · 透視網格</small></li><li class="current"><span>02 / BUILT</span><b>參考圖與紙上編輯</b><small>移動 · 縮放 · 旋轉 · 鎖定</small></li><li><span>03 / BUILT</span><b>保存與重新對位</b><small>紙張座標 · Session · Resume</small></li><li><span>04 / DEVICE CHECK</span><b>PWA 與實機驗收</b><small>主畫面 · 離線 · iPhone / iPad</small></li></ol></section>
   </main><footer>paper <span>給輪廓一點方向，給創作更多空間。</span><a href="project-plan.md">專案規格 ↗</a></footer>
   <script type="module" src="app.js"></script>
 </body></html>
